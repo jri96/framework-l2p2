@@ -24,6 +24,13 @@ Voorbeeld van één request:
 | Statuscode | `200 OK` |
 | JSON | `{ "title": "Crypte van de Domtoren", "description": "...", "maxLevel": 10 }` |
 
+## Week 3: API-structuur
+- De endpoints staan nu in controllers: `StatusController` en `InfoController`.
+- De gegevens komen uit services achter een interface: `IStatusService` en `IGameInfoService`.
+- De services worden geregistreerd in `Program.cs` (`AddScoped`) en via de constructor in de controller geïnjecteerd.
+- Het requestpad (`/api/status`, `/api/info`) en de DTO-velden zijn gelijk gebleven, dus de console werkt zonder aanpassing.
+- De taakverdeling voor de rest van het spel staat in [docs/TAKEN.md](docs/TAKEN.md).
+
 ## Starten
 Twee terminals, allebei vanuit de hoofdmap:
 
