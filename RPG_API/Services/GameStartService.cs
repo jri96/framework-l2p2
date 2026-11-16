@@ -39,7 +39,7 @@ public class GameStartService
         await _gameState.SaveAsync(game);
 
         var message = $"Welkom, {player.Name}. Je staat bij de {game.CurrentLocation}. " +
-                      $"Bereik level {GameRules.MaxLevel} om de uitgang te vinden.";
+                      $"Hoog boven je luidt de Klokkenwachter. Bereik level {GameRules.BossLevel} en versla hem.";
 
         var savedGame = await _gameState.LoadAsync(game.Id);
         return _gameState.CreateResponse(savedGame, message);

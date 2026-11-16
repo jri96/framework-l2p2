@@ -2,7 +2,7 @@ using RPG_API.Models;
 
 namespace RPG_API.Services;
 
-// Week 3: spelinformatie via een service. De controller roept deze interface aan.
+// Week 2/3: spelinformatie. De gegevens blijven in de API; de console toont ze alleen.
 public interface IGameInfoService
 {
     GameInfoResponse GetInfo();
@@ -18,6 +18,7 @@ public class GameInfoService : IGameInfoService
             Description = GameRules.Description,
             MaxLevel = GameRules.MaxLevel,
             RestLevels = GameRules.RestLevels.ToList(),
+            BossLevel = GameRules.BossLevel,
             StartHealth = GameRules.PlayerMaxHealth,
             StartPotions = GameRules.StartPotions
         };

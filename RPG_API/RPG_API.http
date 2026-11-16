@@ -3,9 +3,6 @@
 ### Werkt de API?
 GET {{api}}/api/status
 
-### Spelinformatie
-GET {{api}}/api/info
-
 ### Nieuw spel
 POST {{api}}/api/game
 Content-Type: application/json
@@ -23,11 +20,42 @@ GET {{api}}/api/game/1
 ### Naar het volgende level
 POST {{api}}/api/game/1/move
 
-### Drankje drinken (eigen spelregel)
+### Aanvallen (Light of Heavy)
+POST {{api}}/api/game/1/attack
+Content-Type: application/json
+
+{
+  "type": "Heavy"
+}
+
+### Vluchten
+POST {{api}}/api/game/1/run
+
+### Drankje drinken (eigen spelactie)
 POST {{api}}/api/game/1/potion
 
-### Test: onbekende game
+### Foutgeval: spel bestaat niet (404)
 GET {{api}}/api/game/9999
 
-### Test: actie na het einde van het spel (gebruik het id van een gewonnen spel)
+### Foutgeval: lege naam (400)
+POST {{api}}/api/game
+Content-Type: application/json
+
+{
+  "playerName": ""
+}
+
+### Foutgeval: ongeldige aanval (400)
+POST {{api}}/api/game/1/attack
+Content-Type: application/json
+
+{
+  "type": "Medium"
+}
+
+### Spelinformatie (week 2/3)
+GET {{api}}/api/info
+
+### Foutgeval: actie na het einde van het spel (409)
+# Gebruik het id van een gewonnen of verloren spel.
 POST {{api}}/api/game/1/move

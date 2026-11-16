@@ -26,7 +26,6 @@ public static class Program
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection ontbreekt in appsettings.json.");
 
-        // Week 4: EF Core met MySQL.
         builder.Services.AddDbContext<GameDbContext>(options =>
         {
             options.UseLazyLoadingProxies();
@@ -47,6 +46,9 @@ public static class Program
         builder.Services.AddScoped<GameStateService>();
         builder.Services.AddScoped<GameResponseMapper>();
         builder.Services.AddScoped<MovementService>();
+        builder.Services.AddScoped<CombatService>();
+        builder.Services.AddScoped<CombatRoundService>();
+        builder.Services.AddScoped<CombatGameService>();
         builder.Services.AddScoped<PotionService>();
 
         builder.Services.AddControllers()

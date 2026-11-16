@@ -23,6 +23,7 @@ public class GameStateService
     {
         var game = await _context.Games
             .Include(item => item.Player)
+            .Include(item => item.CurrentEnemy)
             .FirstOrDefaultAsync(item => item.Id == gameId);
 
         if (game is null)
@@ -31,11 +32,29 @@ public class GameStateService
         return game;
     }
 
-    // Een beëindigde game mag nog bekeken worden, maar krijgt geen nieuwe spelacties.
     public void EnsureActive(Game game)
     {
         if (game.IsFinished)
             throw new GameRuleException("Dit spel is al afgelopen. Start een nieuw spel.");
+    }
+
+    public void EnsureInCombat(Game game)
+    {
+        if (game.CurrentEnemy is null)
+            throw new GameRuleException("Er is hier geen vijand om tegen te vechten.");
+    }
+
+    public void EnsureNotInCombat(Game game)
+    {
+        if (game.CurrentEnemy is not null)
+            throw new GameRuleException($"De {game.CurrentEnemy.Name} staat nog voor je. Versla hem of probeer te vluchten.");
+    }
+
+    public void ClearEnemy(Game game)
+    {
+        game.CurrentEnemy = null;
+        game.CurrentEnemyId = null;
+        game.CurrentEnemyHealth = null;
     }
 
     public async Task SaveAsync(Game game)
@@ -44,8 +63,8 @@ public class GameStateService
         await _context.SaveChangesAsync();
     }
 
-    public GameResponse CreateResponse(Game game, string message = "")
+    public GameResponse CreateResponse(Game game, string message = "", CombatRoundResult? round = null)
     {
-        return _responseMapper.Create(game, message);
+        return _responseMapper.Create(game, message, round);
     }
 }

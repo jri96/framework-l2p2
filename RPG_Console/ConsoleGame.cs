@@ -4,6 +4,7 @@ using RPG_Console.Models;
 namespace RPG_Console;
 
 // De besturing van de console: menu's tonen, invoer lezen en de API aanroepen.
+// De spelregels zelf staan in de API; de console laat alleen het resultaat zien.
 public class ConsoleGame
 {
     private readonly GameApiClient _gameApi;
@@ -75,6 +76,8 @@ public class ConsoleGame
     {
         var playerName = ConsoleInput.ReadRequired("  Naam van je held: ");
         var game = await _gameApi.StartGameAsync(playerName);
+
+        ConsoleRenderer.ShowWelcome(game.Player.Name);
         await PlayAsync(game);
     }
 
@@ -85,6 +88,7 @@ public class ConsoleGame
         ConsoleInput.Pause();
     }
 
+    // Lopende spellen kun je verder spelen; afgelopen spellen kun je alleen bekijken.
     private async Task ContinueGameAsync()
     {
         var games = await _gameApi.GetGamesAsync();
@@ -104,7 +108,6 @@ public class ConsoleGame
 
         var game = await _gameApi.GetGameAsync(games[option - 1].Id);
 
-        // Een afgelopen spel mag je bekijken, maar niet verder spelen.
         if (game.IsFinished)
         {
             ConsoleRenderer.RenderGame(game);
@@ -117,38 +120,30 @@ public class ConsoleGame
         await PlayAsync(game);
     }
 
-    // De console stuurt alleen de keuze. Level, ruimte en gezondheid bepaalt de API.
     private async Task PlayAsync(GameState game)
     {
         while (!game.IsFinished)
         {
             ConsoleRenderer.RenderGame(game);
-            var option = ConsoleInput.ReadOption(4);
+
+            var inCombat = game.Enemy is not null;
+            var option = ConsoleInput.ReadOption(inCombat ? 6 : 4);
 
             try
             {
-                switch (option)
-                {
-                    case 1:
-                        game = await _gameApi.MoveAsync(game.Id);
-                        break;
+                var nextGame = inCombat
+                    ? await HandleCombatChoiceAsync(option, game)
+                    : await HandleExplorationChoiceAsync(option, game);
 
-                    case 2:
-                        game = await _gameApi.UsePotionAsync(game.Id);
-                        break;
+                // null betekent: terug naar het hoofdmenu
+                if (nextGame is null)
+                    return;
 
-                    case 3:
-                        var savedGame = await _gameApi.GetGameAsync(game.Id);
-                        ConsoleRenderer.ShowStatus(savedGame);
-                        ConsoleInput.Pause();
-                        break;
-
-                    default:
-                        return;
-                }
+                game = nextGame;
             }
             catch (ApiException exception)
             {
+                // Bijvoorbeeld 409: "Je hebt geen genezingsdrankjes meer."
                 ConsoleRenderer.ShowError(exception.Message);
                 ConsoleInput.Pause();
             }
@@ -156,6 +151,58 @@ public class ConsoleGame
 
         ConsoleRenderer.RenderGame(game);
         ConsoleRenderer.ShowEnding(game);
+        ConsoleInput.Pause();
+    }
+
+    private async Task<GameState?> HandleExplorationChoiceAsync(int option, GameState game)
+    {
+        switch (option)
+        {
+            case 1:
+                return await _gameApi.MoveAsync(game.Id);
+
+            case 2:
+                return await _gameApi.UsePotionAsync(game.Id);
+
+            case 3:
+                await ShowStatusAsync(game);
+                return game;
+
+            default:
+                return null;
+        }
+    }
+
+    private async Task<GameState?> HandleCombatChoiceAsync(int option, GameState game)
+    {
+        switch (option)
+        {
+            case 1:
+                return await _gameApi.AttackAsync(game.Id, "Light");
+
+            case 2:
+                return await _gameApi.AttackAsync(game.Id, "Heavy");
+
+            case 3:
+                return await _gameApi.UsePotionAsync(game.Id);
+
+            case 4:
+                return await _gameApi.RunAsync(game.Id);
+
+            case 5:
+                await ShowStatusAsync(game);
+                return game;
+
+            default:
+                return null;
+        }
+    }
+
+    // Haalt de opgeslagen toestand opnieuw op via GET /api/game/{id}.
+    private async Task ShowStatusAsync(GameState game)
+    {
+        var savedGame = await _gameApi.GetGameAsync(game.Id);
+        ConsoleRenderer.ShowStatus(savedGame);
         ConsoleInput.Pause();
     }
 }

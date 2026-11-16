@@ -36,7 +36,7 @@ Voorbeeld van één request:
 - `POST /api/game` slaat een nieuwe speler en game op en geeft **201 Created** met een `GameResponse` terug.
 - `GET /api/game` en `GET /api/game/{id}` halen opgeslagen spellen op, met `Include(game => game.Player)`.
 - De console kan een spel starten en na een herstart hervatten.
-- Relatie en gekozen velden: [docs/ERD.md](docs/ERD.md).
+- Relaties en gekozen velden: [docs/ERD.md](docs/ERD.md).
 
 ## Week 5: bewegen, rustplaats en uitgang
 - `POST /api/game/{id}/move`: de `MovementService` volgt steeds dezelfde stappen: game ophalen → controleren → volgend level en ruimte bepalen → opslaan → response.
@@ -53,6 +53,27 @@ Voorwaarden, vooraf opgeschreven:
 4. Een drankje geneest 30 HP, maar nooit boven het maximum.
 
 Getest: onbekende game en een actie na het einde van het spel worden geweigerd. Ze geven nu nog een 500-fout; in week 7 worden dat nette statuscodes (404 en 409).
+
+## Week 6: vijanden en gevechten
+- Abstracte `Enemy` met subclasses `Skeleton` (Skelet), `Goblin` (Kobold), `Orc` (Ork) en de eindbaas `BellWarden` (Klokkenwachter). Geseed met `HasData`.
+- `Game.CurrentEnemy` (relatie) en `Game.CurrentEnemyHealth`: de vaste stats staan in `Enemies`, de actuele HP van de vijand in dit spel staat bij de game.
+- Willekeurige ruimtes: 65% gevecht, 20% schatkamer, 15% leeg. Level 10 is nu de eindbaas; na de overwinning ga je door de uitgang (`RoomType.Exit`).
+- `POST /api/game/{id}/attack` met `{ "type": "Light" }` of `"Heavy"`. Eén beurt in `CombatRoundService`:
+  1. controleren dat het spel loopt en er een vijand is;
+  2. beide aanvallen bepalen (`CombatService`, de damage-helper);
+  3. snelheid vergelijken, de snelste slaat eerst (bij gelijk: de speler);
+  4. direct controleren of iemand verslagen is; een verslagen vijand slaat niet terug;
+  5. opslaan en het resultaat teruggeven.
+- Tijdens een gevecht kun je niet bewegen.
+- Encapsulatie: `Player.Health`, `Attack` en `Potions` hebben een `private set`. Veranderen gaat via `TakeDamage`, `Heal`, `RestoreFullHealth`, `TryAddPotion` en `UsePotion`.
+- Aangepaste helper: `DamageCalculator.ApplyDamage` laat levens nooit onder 0 komen en negeert negatieve schade.
+
+### Eigen spelregels in het gevecht
+- **Vluchten** (`POST /api/game/{id}/run`): lukt in 60% van de gevallen; mislukt het, dan valt de vijand aan. Voor de eindbaas kun je niet vluchten.
+- **Drankje in een gevecht** kost je beurt: de vijand valt meteen aan.
+- **Sterker worden**: na iedere overwinning +1 aanvalskracht en 25% kans op een drankje.
+
+Getest: een beurt waarin de speler eerst slaat (Ork, traag), een beurt waarin de vijand eerst slaat (Kobold, snel), een vijand die in één klap neergaat, en hervatten tijdens een gevecht (zelfde vijand en HP).
 
 ## Starten
 WAMP aan (MySQL), daarna dubbelklik op `start.bat`. Dat doet eenmalig `dotnet tool restore`, `dotnet restore`, maakt de migration `InitialGame` en de database, en start daarna API en console.

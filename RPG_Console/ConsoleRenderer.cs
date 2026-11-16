@@ -25,21 +25,6 @@ public static class ConsoleRenderer
         Console.WriteLine();
     }
 
-    public static void ShowInfo(GameInfo info)
-    {
-        ClearScreen();
-        WriteTitle();
-        WriteColored($"  {info.Title}", ConsoleColor.Yellow);
-        Console.WriteLine();
-        foreach (var line in WrapText(info.Description, PanelWidth - 2))
-            Console.WriteLine($"  {line}");
-        Console.WriteLine();
-        Console.WriteLine($"  Aantal levels:   {info.MaxLevel}");
-        Console.WriteLine($"  Rustplaatsen:    level {string.Join(" en ", info.RestLevels)}");
-        Console.WriteLine($"  Start-HP:        {info.StartHealth}");
-        Console.WriteLine($"  Drankjes:        {info.StartPotions}");
-    }
-
     public static void ShowGames(List<GameSummary> games)
     {
         ClearScreen();
@@ -59,6 +44,22 @@ public static class ConsoleRenderer
         Console.WriteLine();
     }
 
+    public static void ShowInfo(GameInfo info)
+    {
+        ClearScreen();
+        WriteTitle();
+        WriteColored($"  {info.Title}", ConsoleColor.Yellow);
+        Console.WriteLine();
+        foreach (var line in WrapText(info.Description, PanelWidth - 2))
+            Console.WriteLine($"  {line}");
+        Console.WriteLine();
+        Console.WriteLine($"  Aantal levels:   {info.MaxLevel}");
+        Console.WriteLine($"  Rustplaatsen:    level {string.Join(" en ", info.RestLevels)}");
+        Console.WriteLine($"  Eindbaas:        level {info.BossLevel}");
+        Console.WriteLine($"  Start-HP:        {info.StartHealth}");
+        Console.WriteLine($"  Drankjes:        {info.StartPotions}");
+    }
+
     public static void RenderGame(GameState game)
     {
         ClearScreen();
@@ -69,28 +70,10 @@ public static class ConsoleRenderer
         if (game.IsFinished)
             return;
 
-        Console.WriteLine();
-        WriteColored("  [ VERKENNEN ]", ConsoleColor.Green);
-        Console.WriteLine("  1. Verder naar het volgende level");
-        Console.WriteLine("  2. Drankje drinken");
-        Console.WriteLine("  3. Status bekijken");
-        Console.WriteLine("  4. Terug naar hoofdmenu");
-        Console.WriteLine();
-    }
-
-    public static void ShowEnding(GameState game)
-    {
-        Console.WriteLine();
-        if (game.IsWon)
-        {
-            WriteColored("  *** GEWONNEN! ***", ConsoleColor.Yellow);
-            Console.WriteLine($"  {game.Player.Name} heeft de uitgang bereikt.");
-        }
+        if (game.Enemy is not null)
+            DrawCombatPanel(game.Enemy);
         else
-        {
-            WriteColored("  *** GAME OVER ***", ConsoleColor.Red);
-            Console.WriteLine($"  {game.Player.Name} kwam tot level {game.CurrentLevel}.");
-        }
+            DrawExplorationPanel(game);
     }
 
     public static void ShowStatus(GameState game)
@@ -99,12 +82,34 @@ public static class ConsoleRenderer
         WriteLine('-');
         Console.WriteLine($"  STATUS - spel #{game.Id}");
         WriteLine('-');
-        Console.WriteLine($"  Speler:   {game.Player.Name}");
-        Console.WriteLine($"  Levens:   {game.Player.Health}/{game.Player.MaxHealth}");
-        Console.WriteLine($"  Drankjes: {game.Player.Potions}");
-        Console.WriteLine($"  Level:    {game.CurrentLevel}/{game.MaxLevel} ({game.CurrentLocation})");
-        Console.WriteLine($"  Ruimte:   {TranslateRoom(game.CurrentRoomType)}");
-        Console.WriteLine("  Deze gegevens komen opnieuw uit de database (GET /api/game/{id}).");
+        Console.WriteLine($"  Speler:          {game.Player.Name}");
+        Console.WriteLine($"  Levens:          {game.Player.Health}/{game.Player.MaxHealth}");
+        Console.WriteLine($"  Aanvalskracht:   {game.Player.Attack}");
+        Console.WriteLine($"  Drankjes:        {game.Player.Potions}");
+        Console.WriteLine($"  Level:           {game.CurrentLevel}/{game.MaxLevel} ({game.CurrentLocation})");
+        Console.WriteLine($"  Ruimte:          {TranslateRoom(game.CurrentRoomType)}");
+        Console.WriteLine($"  Vijanden verslagen: {game.EnemiesDefeated}");
+        Console.WriteLine("  Het spel wordt na iedere actie automatisch opgeslagen.");
+    }
+
+    public static void ShowEnding(GameState game)
+    {
+        Console.WriteLine();
+        if (game.IsWon)
+        {
+            WriteColored("  *** GEWONNEN! ***", ConsoleColor.Yellow);
+            Console.WriteLine($"  {game.Player.Name} versloeg {game.EnemiesDefeated} vijanden en de Klokkenwachter.");
+        }
+        else
+        {
+            WriteColored("  *** GAME OVER ***", ConsoleColor.Red);
+            Console.WriteLine($"  {game.Player.Name} kwam tot level {game.CurrentLevel} en versloeg {game.EnemiesDefeated} vijanden.");
+        }
+    }
+
+    public static void ShowWelcome(string playerName)
+    {
+        WriteColored($"  Succes, {playerName}!", ConsoleColor.Cyan);
     }
 
     public static void ShowGoodbye()
@@ -128,7 +133,7 @@ public static class ConsoleRenderer
     {
         var player = game.Player;
         WriteLine('=');
-        Console.WriteLine($"  {player.Name}   |   Drankjes {player.Potions}");
+        Console.WriteLine($"  {player.Name}   |   Aanval {player.Attack}   |   Drankjes {player.Potions}");
         Console.Write("  HP    ");
         WriteBar(player.Health, player.MaxHealth);
         Console.WriteLine($" {player.Health}/{player.MaxHealth}");
@@ -147,6 +152,46 @@ public static class ConsoleRenderer
         Console.WriteLine();
         foreach (var line in WrapText(game.Message, PanelWidth - 2))
             Console.WriteLine($"  {line}");
+
+        if (game.PlayerAttack is not null || game.EnemyAttack is not null)
+        {
+            Console.WriteLine();
+            WriteColored($"  Jij deed {game.DamageDealt} schade  |  Jij kreeg {game.DamageReceived} schade", ConsoleColor.DarkGray);
+        }
+    }
+
+    private static void DrawCombatPanel(EnemyState enemy)
+    {
+        Console.WriteLine();
+        WriteColored(enemy.IsBoss ? "  [ EINDBAAS ]" : "  [ GEVECHT ]", ConsoleColor.Red);
+        foreach (var line in EnemyArt.Get(enemy.Name))
+            Console.WriteLine($"      {line}");
+
+        Console.WriteLine($"  {enemy.Name} - {enemy.Description}");
+        Console.Write("  HP    ");
+        WriteBar(enemy.Health, enemy.MaxHealth, ConsoleColor.Red);
+        Console.WriteLine($" {enemy.Health}/{enemy.MaxHealth}");
+        Console.WriteLine($"  Schade {enemy.Damage}  |  Snelheid {enemy.Speed}");
+        Console.WriteLine();
+        Console.WriteLine("  1. Lichte aanval (snel, minder schade)");
+        Console.WriteLine("  2. Zware aanval (traag, meer schade)");
+        Console.WriteLine("  3. Drankje drinken (kost je beurt)");
+        Console.WriteLine(enemy.IsBoss ? "  4. Vluchten (kan niet bij de eindbaas)" : "  4. Vluchten (60% kans)");
+        Console.WriteLine("  5. Status bekijken");
+        Console.WriteLine("  6. Terug naar hoofdmenu");
+        Console.WriteLine();
+    }
+
+    private static void DrawExplorationPanel(GameState game)
+    {
+        Console.WriteLine();
+        WriteColored("  [ VERKENNEN ]", ConsoleColor.Green);
+        var nextText = game.CurrentLevel + 1 == game.MaxLevel ? "Naar de klokkenzolder (eindbaas!)" : "Verder naar het volgende level";
+        Console.WriteLine($"  1. {nextText}");
+        Console.WriteLine("  2. Drankje drinken");
+        Console.WriteLine("  3. Status bekijken");
+        Console.WriteLine("  4. Terug naar hoofdmenu");
+        Console.WriteLine();
     }
 
     private static string TranslateRoom(string roomType)
@@ -155,8 +200,10 @@ public static class ConsoleRenderer
         {
             "Start" => "startpunt",
             "Normal" => "lege ruimte",
+            "Combat" => "gevecht",
             "Treasure" => "schatkamer",
             "Rest" => "rustplaats",
+            "Boss" => "eindbaas",
             "Exit" => "uitgang",
             _ => roomType
         };
@@ -224,6 +271,7 @@ public static class ConsoleRenderer
 
     private static void ClearScreen()
     {
+        // Console.Clear() werkt niet als de uitvoer wordt doorgestuurd (bijv. naar een bestand).
         if (!Console.IsOutputRedirected)
             Console.Clear();
         else

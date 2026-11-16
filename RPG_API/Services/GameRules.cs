@@ -14,19 +14,33 @@ public static class GameRules
 
     // Levels
     public const int MaxLevel = 10;
+    public const int BossLevel = 10;
     public static readonly int[] RestLevels = { 5, 9 };
 
     // Speler
     public const int MaxPlayerNameLength = 30;
     public const int PlayerMaxHealth = 100;
+    public const int PlayerStartAttack = 10;
+    public const int PlayerSpeed = 10;
+
+    // Aanvallen
+    public const int LightAttackSpeedBonus = 10;
 
     // Eigen regel: drankjes
     public const int StartPotions = 2;
     public const int MaxPotions = 5;
     public const int PotionHealAmount = 30;
+    public const int PotionDropChance = 25;
+
+    // Eigen regel: vluchten
+    public const int RunSuccessChance = 60;
+
+    // Eigen regel: sterker worden na een overwinning
+    public const int AttackBonusPerVictory = 1;
 
     // Verdeling van de willekeurige ruimtes (de rest is een lege ruimte)
-    public const int TreasureRoomChance = 30;
+    public const int CombatRoomChance = 65;
+    public const int TreasureRoomChance = 20;
 
     private static readonly string[] LocationNames =
     {
@@ -58,7 +72,10 @@ public static class GameRules
 
     public static RoomType ChooseRandomRoom(int roll)
     {
-        if (roll < TreasureRoomChance)
+        if (roll < CombatRoomChance)
+            return RoomType.Combat;
+
+        if (roll < CombatRoomChance + TreasureRoomChance)
             return RoomType.Treasure;
 
         return RoomType.Normal;

@@ -49,7 +49,23 @@ public class GameController : ControllerBase
         return Ok(game);
     }
 
-    // POST /api/game/5/potion   (eigen spelregel)
+    // POST /api/game/5/attack   body: { "type": "Light" } of { "type": "Heavy" }
+    [HttpPost("{id:int}/attack")]
+    public async Task<ActionResult<GameResponse>> Attack(int id, AttackRequest request)
+    {
+        var game = await _gameService.AttackAsync(id, request.Type);
+        return Ok(game);
+    }
+
+    // POST /api/game/5/run
+    [HttpPost("{id:int}/run")]
+    public async Task<ActionResult<GameResponse>> Run(int id)
+    {
+        var game = await _gameService.RunAsync(id);
+        return Ok(game);
+    }
+
+    // POST /api/game/5/potion   (eigen spelactie)
     [HttpPost("{id:int}/potion")]
     public async Task<ActionResult<GameResponse>> UsePotion(int id)
     {

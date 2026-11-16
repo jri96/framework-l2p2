@@ -4,7 +4,7 @@ using RPG_Console.Models;
 namespace RPG_Console.Api;
 
 // Alle HTTP-aanroepen naar de API staan in deze class.
-// De console is de client, de API is de server.
+// De rest van de console weet niet hoe de URL's eruitzien.
 public class GameApiClient
 {
     private readonly HttpClient _httpClient;
@@ -54,6 +54,18 @@ public class GameApiClient
     public async Task<GameState> MoveAsync(int gameId)
     {
         var response = await _httpClient.PostAsync($"api/game/{gameId}/move", null);
+        return await ReadAsync<GameState>(response);
+    }
+
+    public async Task<GameState> AttackAsync(int gameId, string attackType)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"api/game/{gameId}/attack", new { Type = attackType });
+        return await ReadAsync<GameState>(response);
+    }
+
+    public async Task<GameState> RunAsync(int gameId)
+    {
+        var response = await _httpClient.PostAsync($"api/game/{gameId}/run", null);
         return await ReadAsync<GameState>(response);
     }
 

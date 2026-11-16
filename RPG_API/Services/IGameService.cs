@@ -1,3 +1,4 @@
+using RPG_API.Enums;
 using RPG_API.Models;
 
 namespace RPG_API.Services;
@@ -10,5 +11,7 @@ public interface IGameService
     Task<List<GameSummaryResponse>> GetGamesAsync();
     Task<GameResponse> GetAsync(int gameId);
     Task<GameResponse> MoveAsync(int gameId);
+    Task<GameResponse> AttackAsync(int gameId, AttackType attackType);
+    Task<GameResponse> RunAsync(int gameId);
     Task<GameResponse> UsePotionAsync(int gameId);
 }
