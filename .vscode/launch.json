@@ -1,0 +1,36 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "API",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-api",
+            "program": "${workspaceFolder}/RPG_API/bin/Debug/net10.0/RPG_API.dll",
+            "cwd": "${workspaceFolder}/RPG_API",
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_URLS": "http://localhost:5265"
+            },
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Console",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-console",
+            "program": "${workspaceFolder}/RPG_Console/bin/Debug/net10.0/RPG_Console.dll",
+            "cwd": "${workspaceFolder}/RPG_Console",
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        }
+    ],
+    "compounds": [
+        {
+            "name": "API + Console",
+            "configurations": ["API", "Console"],
+            "stopAll": true
+        }
+    ]
+}
