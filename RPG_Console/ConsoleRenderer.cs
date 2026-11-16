@@ -19,7 +19,7 @@ public static class ConsoleRenderer
 
         Console.WriteLine();
         Console.WriteLine("  1. Nieuw spel");
-        Console.WriteLine("  2. Spel hervatten");
+        Console.WriteLine("  2. Spel hervatten of bekijken");
         Console.WriteLine("  3. Spelinformatie");
         Console.WriteLine("  4. Afsluiten");
         Console.WriteLine();
@@ -35,6 +35,9 @@ public static class ConsoleRenderer
             Console.WriteLine($"  {line}");
         Console.WriteLine();
         Console.WriteLine($"  Aantal levels:   {info.MaxLevel}");
+        Console.WriteLine($"  Rustplaatsen:    level {string.Join(" en ", info.RestLevels)}");
+        Console.WriteLine($"  Start-HP:        {info.StartHealth}");
+        Console.WriteLine($"  Drankjes:        {info.StartPotions}");
     }
 
     public static void ShowGames(List<GameSummary> games)
@@ -47,7 +50,8 @@ public static class ConsoleRenderer
         for (var index = 0; index < games.Count; index++)
         {
             var game = games[index];
-            Console.WriteLine($"  {index + 1}. {game.PlayerName} - level {game.CurrentLevel}: {game.CurrentLocation}");
+            var status = game.IsFinished ? (game.IsWon ? "gewonnen" : "game over") : "bezig";
+            Console.WriteLine($"  {index + 1}. {game.PlayerName} - level {game.CurrentLevel}: {game.CurrentLocation} [{status}]");
             Console.WriteLine($"     HP {game.Health}/{game.MaxHealth} - laatst gespeeld {game.UpdatedAt.ToLocalTime():dd-MM HH:mm}");
         }
 
@@ -62,10 +66,31 @@ public static class ConsoleRenderer
         DrawPlayerPanel(game);
         DrawMessage(game);
 
+        if (game.IsFinished)
+            return;
+
         Console.WriteLine();
-        Console.WriteLine("  1. Status bekijken");
-        Console.WriteLine("  2. Terug naar hoofdmenu");
+        WriteColored("  [ VERKENNEN ]", ConsoleColor.Green);
+        Console.WriteLine("  1. Verder naar het volgende level");
+        Console.WriteLine("  2. Drankje drinken");
+        Console.WriteLine("  3. Status bekijken");
+        Console.WriteLine("  4. Terug naar hoofdmenu");
         Console.WriteLine();
+    }
+
+    public static void ShowEnding(GameState game)
+    {
+        Console.WriteLine();
+        if (game.IsWon)
+        {
+            WriteColored("  *** GEWONNEN! ***", ConsoleColor.Yellow);
+            Console.WriteLine($"  {game.Player.Name} heeft de uitgang bereikt.");
+        }
+        else
+        {
+            WriteColored("  *** GAME OVER ***", ConsoleColor.Red);
+            Console.WriteLine($"  {game.Player.Name} kwam tot level {game.CurrentLevel}.");
+        }
     }
 
     public static void ShowStatus(GameState game)
@@ -76,7 +101,9 @@ public static class ConsoleRenderer
         WriteLine('-');
         Console.WriteLine($"  Speler:   {game.Player.Name}");
         Console.WriteLine($"  Levens:   {game.Player.Health}/{game.Player.MaxHealth}");
+        Console.WriteLine($"  Drankjes: {game.Player.Potions}");
         Console.WriteLine($"  Level:    {game.CurrentLevel}/{game.MaxLevel} ({game.CurrentLocation})");
+        Console.WriteLine($"  Ruimte:   {TranslateRoom(game.CurrentRoomType)}");
         Console.WriteLine("  Deze gegevens komen opnieuw uit de database (GET /api/game/{id}).");
     }
 
@@ -101,14 +128,14 @@ public static class ConsoleRenderer
     {
         var player = game.Player;
         WriteLine('=');
-        Console.WriteLine($"  {player.Name}   |   spel #{game.Id}");
+        Console.WriteLine($"  {player.Name}   |   Drankjes {player.Potions}");
         Console.Write("  HP    ");
         WriteBar(player.Health, player.MaxHealth);
         Console.WriteLine($" {player.Health}/{player.MaxHealth}");
         Console.Write("  Level ");
         WriteBar(game.CurrentLevel, game.MaxLevel, ConsoleColor.Cyan);
         Console.WriteLine($" {game.CurrentLevel}/{game.MaxLevel}");
-        Console.WriteLine($"  Locatie: {game.CurrentLocation}");
+        Console.WriteLine($"  Locatie: {game.CurrentLocation} ({TranslateRoom(game.CurrentRoomType)})");
         WriteLine('=');
     }
 
@@ -120,6 +147,19 @@ public static class ConsoleRenderer
         Console.WriteLine();
         foreach (var line in WrapText(game.Message, PanelWidth - 2))
             Console.WriteLine($"  {line}");
+    }
+
+    private static string TranslateRoom(string roomType)
+    {
+        return roomType switch
+        {
+            "Start" => "startpunt",
+            "Normal" => "lege ruimte",
+            "Treasure" => "schatkamer",
+            "Rest" => "rustplaats",
+            "Exit" => "uitgang",
+            _ => roomType
+        };
     }
 
     private static void WriteTitle()

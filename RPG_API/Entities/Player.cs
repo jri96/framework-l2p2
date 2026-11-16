@@ -13,4 +13,7 @@ public class Player
 
     public int Health { get; set; } = GameRules.PlayerMaxHealth;
     public int MaxHealth { get; set; } = GameRules.PlayerMaxHealth;
+
+    // Eigen toevoeging: aantal genezingsdrankjes dat de speler bij zich heeft.
+    public int Potions { get; set; } = GameRules.StartPotions;
 }

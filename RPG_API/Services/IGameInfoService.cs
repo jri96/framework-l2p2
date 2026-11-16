@@ -16,7 +16,10 @@ public class GameInfoService : IGameInfoService
         {
             Title = GameRules.Title,
             Description = GameRules.Description,
-            MaxLevel = GameRules.MaxLevel
+            MaxLevel = GameRules.MaxLevel,
+            RestLevels = GameRules.RestLevels.ToList(),
+            StartHealth = GameRules.PlayerMaxHealth,
+            StartPotions = GameRules.StartPotions
         };
     }
 }

@@ -34,7 +34,11 @@ public static class Program
             options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 0)));
         });
 
-        // Dependency Injection. Scoped: één object per HTTP-request (samen met de DbContext).
+        // Dependency Injection
+        // Singleton: één object voor de hele applicatie.
+        builder.Services.AddSingleton<IRandomGenerator, RandomGenerator>();
+
+        // Scoped: één object per HTTP-request (samen met de DbContext).
         builder.Services.AddScoped<IStatusService, StatusService>();
         builder.Services.AddScoped<IGameInfoService, GameInfoService>();
         builder.Services.AddScoped<IGameService, GameService>();
@@ -42,6 +46,8 @@ public static class Program
         builder.Services.AddScoped<GameQueryService>();
         builder.Services.AddScoped<GameStateService>();
         builder.Services.AddScoped<GameResponseMapper>();
+        builder.Services.AddScoped<MovementService>();
+        builder.Services.AddScoped<PotionService>();
 
         builder.Services.AddControllers()
             .AddJsonOptions(options =>

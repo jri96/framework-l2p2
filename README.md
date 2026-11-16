@@ -38,6 +38,22 @@ Voorbeeld van één request:
 - De console kan een spel starten en na een herstart hervatten.
 - Relatie en gekozen velden: [docs/ERD.md](docs/ERD.md).
 
+## Week 5: bewegen, rustplaats en uitgang
+- `POST /api/game/{id}/move`: de `MovementService` volgt steeds dezelfde stappen: game ophalen → controleren → volgend level en ruimte bepalen → opslaan → response.
+- `RoomType`: `Start`, `Normal`, `Treasure`, `Rest`, `Exit`.
+- Tien levels. Rustplaats op level 5 en 9 (volledig genezen). Level 10 is de uitgang: het spel is gewonnen en afgelopen.
+- Andere levels: 30% kans op een schatkamer (genezingsdrankje), anders een lege ruimte.
+- Een afgelopen spel kan nog bekeken worden, maar krijgt geen nieuwe acties.
+
+### Eigen spelregel: genezingsdrankje (`POST /api/game/{id}/potion`)
+Voorwaarden, vooraf opgeschreven:
+1. Het spel loopt nog.
+2. De speler heeft minstens één drankje (start met 2, maximaal 5).
+3. De speler heeft geen volle HP; anders wordt de actie geweigerd.
+4. Een drankje geneest 30 HP, maar nooit boven het maximum.
+
+Getest: onbekende game en een actie na het einde van het spel worden geweigerd. Ze geven nu nog een 500-fout; in week 7 worden dat nette statuscodes (404 en 409).
+
 ## Starten
 WAMP aan (MySQL), daarna dubbelklik op `start.bat`. Dat doet eenmalig `dotnet tool restore`, `dotnet restore`, maakt de migration `InitialGame` en de database, en start daarna API en console.
 

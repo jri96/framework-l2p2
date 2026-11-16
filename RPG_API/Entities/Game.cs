@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using RPG_API.Enums;
 
 namespace RPG_API.Entities;
 
@@ -16,6 +17,7 @@ public class Game
     [MaxLength(100)]
     public string CurrentLocation { get; set; } = "";
     public int CurrentLevel { get; set; } = 1;
+    public RoomType CurrentRoomType { get; set; } = RoomType.Start;
 
     public bool IsFinished { get; set; }
     public bool IsWon { get; set; }

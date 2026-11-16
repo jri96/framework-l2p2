@@ -51,6 +51,18 @@ public class GameApiClient
         return await ReadAsync<GameState>(response);
     }
 
+    public async Task<GameState> MoveAsync(int gameId)
+    {
+        var response = await _httpClient.PostAsync($"api/game/{gameId}/move", null);
+        return await ReadAsync<GameState>(response);
+    }
+
+    public async Task<GameState> UsePotionAsync(int gameId)
+    {
+        var response = await _httpClient.PostAsync($"api/game/{gameId}/potion", null);
+        return await ReadAsync<GameState>(response);
+    }
+
     // Eerst de statuscode controleren, pas daarna de JSON lezen.
     private static async Task<T> ReadAsync<T>(HttpResponseMessage response)
     {

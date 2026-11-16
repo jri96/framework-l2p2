@@ -19,3 +19,15 @@ GET {{api}}/api/game
 
 ### Eén spel (pas het id aan)
 GET {{api}}/api/game/1
+
+### Naar het volgende level
+POST {{api}}/api/game/1/move
+
+### Drankje drinken (eigen spelregel)
+POST {{api}}/api/game/1/potion
+
+### Test: onbekende game
+GET {{api}}/api/game/9999
+
+### Test: actie na het einde van het spel (gebruik het id van een gewonnen spel)
+POST {{api}}/api/game/1/move

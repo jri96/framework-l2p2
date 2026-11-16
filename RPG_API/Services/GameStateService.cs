@@ -1,11 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using RPG_API.Database;
 using RPG_API.Entities;
+using RPG_API.Exceptions;
 using RPG_API.Models;
 
 namespace RPG_API.Services;
 
-// Gedeelde stappen: spel laden, opslaan en een response maken.
+// Gedeelde stappen die iedere spelactie nodig heeft:
+// laden -> controleren -> (actie) -> opslaan -> response maken.
 public class GameStateService
 {
     private readonly GameDbContext _context;
@@ -19,15 +21,21 @@ public class GameStateService
 
     public async Task<Game> LoadAsync(int gameId)
     {
-        // Include laadt de gekoppelde speler direct mee.
         var game = await _context.Games
             .Include(item => item.Player)
             .FirstOrDefaultAsync(item => item.Id == gameId);
 
         if (game is null)
-            throw new KeyNotFoundException($"Spel {gameId} bestaat niet.");
+            throw new GameNotFoundException(gameId);
 
         return game;
+    }
+
+    // Een beëindigde game mag nog bekeken worden, maar krijgt geen nieuwe spelacties.
+    public void EnsureActive(Game game)
+    {
+        if (game.IsFinished)
+            throw new GameRuleException("Dit spel is al afgelopen. Start een nieuw spel.");
     }
 
     public async Task SaveAsync(Game game)

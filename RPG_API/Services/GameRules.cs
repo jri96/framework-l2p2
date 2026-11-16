@@ -1,6 +1,9 @@
+using RPG_API.Enums;
+
 namespace RPG_API.Services;
 
-// Alle vaste spelgegevens op één plek.
+// Alle getallen van de spelregels op één plek. Zo kun je de balans aanpassen
+// zonder door alle services te zoeken.
 public static class GameRules
 {
     // Spelinformatie
@@ -11,10 +14,19 @@ public static class GameRules
 
     // Levels
     public const int MaxLevel = 10;
+    public static readonly int[] RestLevels = { 5, 9 };
 
     // Speler
     public const int MaxPlayerNameLength = 30;
     public const int PlayerMaxHealth = 100;
+
+    // Eigen regel: drankjes
+    public const int StartPotions = 2;
+    public const int MaxPotions = 5;
+    public const int PotionHealAmount = 30;
+
+    // Verdeling van de willekeurige ruimtes (de rest is een lege ruimte)
+    public const int TreasureRoomChance = 30;
 
     private static readonly string[] LocationNames =
     {
@@ -37,5 +49,18 @@ public static class GameRules
             return $"Level {level}";
 
         return LocationNames[level];
+    }
+
+    public static bool IsRestLevel(int level)
+    {
+        return RestLevels.Contains(level);
+    }
+
+    public static RoomType ChooseRandomRoom(int roll)
+    {
+        if (roll < TreasureRoomChance)
+            return RoomType.Treasure;
+
+        return RoomType.Normal;
     }
 }

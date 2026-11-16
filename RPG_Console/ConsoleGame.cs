@@ -103,25 +103,59 @@ public class ConsoleGame
             return;
 
         var game = await _gameApi.GetGameAsync(games[option - 1].Id);
+
+        // Een afgelopen spel mag je bekijken, maar niet verder spelen.
+        if (game.IsFinished)
+        {
+            ConsoleRenderer.RenderGame(game);
+            ConsoleRenderer.ShowEnding(game);
+            ConsoleInput.Pause();
+            return;
+        }
+
         game.Message = "Je pakt je avontuur weer op.";
         await PlayAsync(game);
     }
 
-    // Week 4: het spel wordt opgeslagen en kan worden opgehaald.
-    // Bewegen komt in week 5.
+    // De console stuurt alleen de keuze. Level, ruimte en gezondheid bepaalt de API.
     private async Task PlayAsync(GameState game)
     {
-        while (true)
+        while (!game.IsFinished)
         {
             ConsoleRenderer.RenderGame(game);
-            var option = ConsoleInput.ReadOption(2);
+            var option = ConsoleInput.ReadOption(4);
 
-            if (option == 2)
-                return;
+            try
+            {
+                switch (option)
+                {
+                    case 1:
+                        game = await _gameApi.MoveAsync(game.Id);
+                        break;
 
-            var savedGame = await _gameApi.GetGameAsync(game.Id);
-            ConsoleRenderer.ShowStatus(savedGame);
-            ConsoleInput.Pause();
+                    case 2:
+                        game = await _gameApi.UsePotionAsync(game.Id);
+                        break;
+
+                    case 3:
+                        var savedGame = await _gameApi.GetGameAsync(game.Id);
+                        ConsoleRenderer.ShowStatus(savedGame);
+                        ConsoleInput.Pause();
+                        break;
+
+                    default:
+                        return;
+                }
+            }
+            catch (ApiException exception)
+            {
+                ConsoleRenderer.ShowError(exception.Message);
+                ConsoleInput.Pause();
+            }
         }
+
+        ConsoleRenderer.RenderGame(game);
+        ConsoleRenderer.ShowEnding(game);
+        ConsoleInput.Pause();
     }
 }

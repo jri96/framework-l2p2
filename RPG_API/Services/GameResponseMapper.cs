@@ -14,6 +14,7 @@ public class GameResponseMapper
             CurrentLevel = game.CurrentLevel,
             MaxLevel = GameRules.MaxLevel,
             CurrentLocation = game.CurrentLocation,
+            CurrentRoomType = game.CurrentRoomType.ToString(),
             IsFinished = game.IsFinished,
             IsWon = game.IsWon,
             Message = message.Trim(),
@@ -21,7 +22,8 @@ public class GameResponseMapper
             {
                 Name = game.Player.Name,
                 Health = game.Player.Health,
-                MaxHealth = game.Player.MaxHealth
+                MaxHealth = game.Player.MaxHealth,
+                Potions = game.Player.Potions
             }
         };
     }

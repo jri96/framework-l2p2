@@ -40,4 +40,20 @@ public class GameController : ControllerBase
         var game = await _gameService.GetAsync(id);
         return Ok(game);
     }
+
+    // POST /api/game/5/move
+    [HttpPost("{id:int}/move")]
+    public async Task<ActionResult<GameResponse>> Move(int id)
+    {
+        var game = await _gameService.MoveAsync(id);
+        return Ok(game);
+    }
+
+    // POST /api/game/5/potion   (eigen spelregel)
+    [HttpPost("{id:int}/potion")]
+    public async Task<ActionResult<GameResponse>> UsePotion(int id)
+    {
+        var game = await _gameService.UsePotionAsync(id);
+        return Ok(game);
+    }
 }
