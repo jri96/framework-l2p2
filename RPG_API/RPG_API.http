@@ -34,6 +34,9 @@ POST {{api}}/api/game/1/run
 ### Drankje drinken (eigen spelactie)
 POST {{api}}/api/game/1/potion
 
+### Request-logs
+GET {{api}}/api/logs?take=10
+
 ### Foutgeval: spel bestaat niet (404)
 GET {{api}}/api/game/9999
 

@@ -1,6 +1,6 @@
 namespace RPG_API.Exceptions;
 
-// Eigen exceptions. In week 7 worden ze vertaald naar een HTTP-statuscode.
+// Eigen exceptions. ExceptionHandlingMiddleware vertaalt ze naar een HTTP-statuscode.
 
 // 404 Not Found: het gevraagde spel bestaat niet.
 public class GameNotFoundException : Exception

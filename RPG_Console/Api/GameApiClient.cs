@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using RPG_Console.Models;
 
 namespace RPG_Console.Api;
@@ -75,13 +76,33 @@ public class GameApiClient
         return await ReadAsync<GameState>(response);
     }
 
-    // Eerst de statuscode controleren, pas daarna de JSON lezen.
+    // Controleert de statuscode. Bij een fout wordt de JSON-foutmelding van de
+    // API gelezen en als ApiException gegooid.
     private static async Task<T> ReadAsync<T>(HttpResponseMessage response)
     {
         if (!response.IsSuccessStatusCode)
-            throw new ApiException((int)response.StatusCode, $"De API gaf een fout terug ({(int)response.StatusCode}).");
+            throw await CreateExceptionAsync(response);
 
         var result = await response.Content.ReadFromJsonAsync<T>();
         return result ?? throw new ApiException((int)response.StatusCode, "De API stuurde een leeg antwoord.");
+    }
+
+    private static async Task<ApiException> CreateExceptionAsync(HttpResponseMessage response)
+    {
+        var statusCode = (int)response.StatusCode;
+        var body = await response.Content.ReadAsStringAsync();
+
+        try
+        {
+            var error = JsonSerializer.Deserialize<ApiError>(body, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            if (!string.IsNullOrWhiteSpace(error?.Error))
+                return new ApiException(statusCode, error.Error);
+        }
+        catch (JsonException)
+        {
+            // Geen JSON: val terug op de standaardmelding hieronder.
+        }
+
+        return new ApiException(statusCode, $"De API gaf een fout terug ({statusCode}).");
     }
 }

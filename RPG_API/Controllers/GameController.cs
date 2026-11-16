@@ -6,6 +6,7 @@ namespace RPG_API.Controllers;
 
 // De controller ontvangt HTTP-requests en geeft HTTP-responses terug.
 // Hij bevat geen spelregels: dat werk doet de service.
+// Fouten (exceptions) worden afgevangen door ExceptionHandlingMiddleware.
 [ApiController]
 [Route("api/[controller]")]
 public class GameController : ControllerBase

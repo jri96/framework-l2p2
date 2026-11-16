@@ -1,6 +1,9 @@
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RPG_API.Database;
+using RPG_API.Middleware;
+using RPG_API.Models;
 using RPG_API.Services;
 
 namespace RPG_API;
@@ -55,6 +58,35 @@ public static class Program
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            })
+            .ConfigureApiBehaviorOptions(options =>
+            {
+                // Validatiefouten ([Required], [StringLength], ongeldige JSON) krijgen
+                // dezelfde vorm als onze andere foutmeldingen.
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    var errors = new List<string>();
+
+                    foreach (var (key, entry) in context.ModelState)
+                    {
+                        if (entry.Errors.Count == 0)
+                            continue;
+
+                        // Een lege sleutel, "request" of een sleutel met "$" komt van een JSON-fout:
+                        // de body kon niet worden gelezen. Die standaardmelding is Engels en technisch.
+                        if (key.Length == 0 || key.StartsWith('$') || key == "request")
+                            errors.Add("De verstuurde gegevens zijn geen geldige JSON of bevatten een ongeldige waarde.");
+                        else
+                            errors.AddRange(entry.Errors.Select(error => error.ErrorMessage));
+                    }
+
+                    return new BadRequestObjectResult(new ErrorResponse
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Error = string.Join(" ", errors.Distinct()),
+                        Path = context.HttpContext.Request.Path
+                    });
+                };
             });
 
         builder.Services.AddOpenApi();
@@ -62,6 +94,11 @@ public static class Program
 
     private static void Configure(WebApplication app)
     {
+        // Volgorde is belangrijk: logging buitenom, zodat ook de statuscode
+        // van een afgevangen fout (404, 409, ...) wordt gelogd.
+        app.UseMiddleware<RequestLoggingMiddleware>();
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
+
         if (app.Environment.IsDevelopment())
             app.MapOpenApi(); // JSON-beschrijving op /openapi/v1.json
 

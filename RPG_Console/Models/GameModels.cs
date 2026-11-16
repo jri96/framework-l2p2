@@ -70,3 +70,10 @@ public class ApiStatus
     public string Message { get; set; } = "";
     public DateTime ServerTime { get; set; }
 }
+
+public class ApiError
+{
+    public int Status { get; set; }
+    public string Error { get; set; } = "";
+    public string Path { get; set; } = "";
+}
