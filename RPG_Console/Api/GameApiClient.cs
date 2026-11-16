@@ -14,7 +14,6 @@ public class GameApiClient
         _httpClient = httpClient;
     }
 
-    // GET /api/status
     public async Task<bool> IsOnlineAsync()
     {
         try
@@ -28,10 +27,37 @@ public class GameApiClient
         }
     }
 
-    // GET /api/info
     public async Task<GameInfo> GetGameInfoAsync()
     {
-        var info = await _httpClient.GetFromJsonAsync<GameInfo>("api/info");
-        return info ?? throw new HttpRequestException("De API stuurde een leeg antwoord.");
+        var response = await _httpClient.GetAsync("api/info");
+        return await ReadAsync<GameInfo>(response);
+    }
+
+    public async Task<GameState> StartGameAsync(string playerName)
+    {
+        var response = await _httpClient.PostAsJsonAsync("api/game", new { PlayerName = playerName });
+        return await ReadAsync<GameState>(response);
+    }
+
+    public async Task<List<GameSummary>> GetGamesAsync()
+    {
+        var response = await _httpClient.GetAsync("api/game");
+        return await ReadAsync<List<GameSummary>>(response);
+    }
+
+    public async Task<GameState> GetGameAsync(int gameId)
+    {
+        var response = await _httpClient.GetAsync($"api/game/{gameId}");
+        return await ReadAsync<GameState>(response);
+    }
+
+    // Eerst de statuscode controleren, pas daarna de JSON lezen.
+    private static async Task<T> ReadAsync<T>(HttpResponseMessage response)
+    {
+        if (!response.IsSuccessStatusCode)
+            throw new ApiException((int)response.StatusCode, $"De API gaf een fout terug ({(int)response.StatusCode}).");
+
+        var result = await response.Content.ReadFromJsonAsync<T>();
+        return result ?? throw new ApiException((int)response.StatusCode, "De API stuurde een leeg antwoord.");
     }
 }

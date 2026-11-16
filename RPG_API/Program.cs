@@ -1,4 +1,6 @@
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
+using RPG_API.Database;
 using RPG_API.Services;
 
 namespace RPG_API;
@@ -13,6 +15,7 @@ public static class Program
 
         var app = builder.Build();
 
+        ApplyMigrations(app);
         Configure(app);
 
         app.Run();
@@ -20,11 +23,25 @@ public static class Program
 
     private static void ConfigureServices(WebApplicationBuilder builder)
     {
-        // Dependency Injection: een controller vraagt in zijn constructor om een
-        // interface, de DI-container geeft het object dat hier is geregistreerd.
-        // Scoped: één object per HTTP-request.
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection ontbreekt in appsettings.json.");
+
+        // Week 4: EF Core met MySQL.
+        builder.Services.AddDbContext<GameDbContext>(options =>
+        {
+            options.UseLazyLoadingProxies();
+            // Vaste MySQL-versie: zo kun je ook een migration maken als MySQL even niet draait.
+            options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 0)));
+        });
+
+        // Dependency Injection. Scoped: één object per HTTP-request (samen met de DbContext).
         builder.Services.AddScoped<IStatusService, StatusService>();
         builder.Services.AddScoped<IGameInfoService, GameInfoService>();
+        builder.Services.AddScoped<IGameService, GameService>();
+        builder.Services.AddScoped<GameStartService>();
+        builder.Services.AddScoped<GameQueryService>();
+        builder.Services.AddScoped<GameStateService>();
+        builder.Services.AddScoped<GameResponseMapper>();
 
         builder.Services.AddControllers()
             .AddJsonOptions(options =>
@@ -40,7 +57,32 @@ public static class Program
         if (app.Environment.IsDevelopment())
             app.MapOpenApi(); // JSON-beschrijving op /openapi/v1.json
 
-        // Week 3: de endpoints staan nu in controllers (map Controllers).
         app.MapControllers();
+    }
+
+    // Voert bij het starten alle migrations uit die nog niet in de database staan.
+    // Bestaat de database nog niet, dan maakt EF Core hem aan.
+    private static void ApplyMigrations(WebApplication app)
+    {
+        using var scope = app.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<GameDbContext>();
+
+        if (!context.Database.GetMigrations().Any())
+        {
+            app.Logger.LogWarning("Er zijn nog geen migrations. Voer eerst uit: " +
+                "dotnet ef migrations add InitialGame --project RPG_API --startup-project RPG_API");
+            return;
+        }
+
+        try
+        {
+            context.Database.Migrate();
+        }
+        catch (Exception exception)
+        {
+            app.Logger.LogCritical("Kan de database niet bijwerken. Staat MySQL (WAMP) aan en klopt de connection string? {Message}",
+                exception.Message);
+            throw;
+        }
     }
 }

@@ -19,8 +19,9 @@ public static class ConsoleRenderer
 
         Console.WriteLine();
         Console.WriteLine("  1. Nieuw spel");
-        Console.WriteLine("  2. Spelinformatie");
-        Console.WriteLine("  3. Afsluiten");
+        Console.WriteLine("  2. Spel hervatten");
+        Console.WriteLine("  3. Spelinformatie");
+        Console.WriteLine("  4. Afsluiten");
         Console.WriteLine();
     }
 
@@ -36,12 +37,47 @@ public static class ConsoleRenderer
         Console.WriteLine($"  Aantal levels:   {info.MaxLevel}");
     }
 
-    public static void ShowWelcome(string playerName)
+    public static void ShowGames(List<GameSummary> games)
+    {
+        ClearScreen();
+        WriteTitle();
+        Console.WriteLine("  OPGESLAGEN SPELLEN");
+        Console.WriteLine();
+
+        for (var index = 0; index < games.Count; index++)
+        {
+            var game = games[index];
+            Console.WriteLine($"  {index + 1}. {game.PlayerName} - level {game.CurrentLevel}: {game.CurrentLocation}");
+            Console.WriteLine($"     HP {game.Health}/{game.MaxHealth} - laatst gespeeld {game.UpdatedAt.ToLocalTime():dd-MM HH:mm}");
+        }
+
+        Console.WriteLine($"  {games.Count + 1}. Terug");
+        Console.WriteLine();
+    }
+
+    public static void RenderGame(GameState game)
+    {
+        ClearScreen();
+        WriteTitle();
+        DrawPlayerPanel(game);
+        DrawMessage(game);
+
+        Console.WriteLine();
+        Console.WriteLine("  1. Status bekijken");
+        Console.WriteLine("  2. Terug naar hoofdmenu");
+        Console.WriteLine();
+    }
+
+    public static void ShowStatus(GameState game)
     {
         Console.WriteLine();
-        WriteColored($"  Welkom, {playerName}!", ConsoleColor.Cyan);
-        Console.WriteLine("  Je staat bij de ingang van de crypte onder de Domtoren.");
-        Console.WriteLine("  Hoog boven je luidt de Klokkenwachter...");
+        WriteLine('-');
+        Console.WriteLine($"  STATUS - spel #{game.Id}");
+        WriteLine('-');
+        Console.WriteLine($"  Speler:   {game.Player.Name}");
+        Console.WriteLine($"  Levens:   {game.Player.Health}/{game.Player.MaxHealth}");
+        Console.WriteLine($"  Level:    {game.CurrentLevel}/{game.MaxLevel} ({game.CurrentLocation})");
+        Console.WriteLine("  Deze gegevens komen opnieuw uit de database (GET /api/game/{id}).");
     }
 
     public static void ShowGoodbye()
@@ -61,6 +97,31 @@ public static class ConsoleRenderer
         WriteColored($"  {message}", ConsoleColor.Yellow);
     }
 
+    private static void DrawPlayerPanel(GameState game)
+    {
+        var player = game.Player;
+        WriteLine('=');
+        Console.WriteLine($"  {player.Name}   |   spel #{game.Id}");
+        Console.Write("  HP    ");
+        WriteBar(player.Health, player.MaxHealth);
+        Console.WriteLine($" {player.Health}/{player.MaxHealth}");
+        Console.Write("  Level ");
+        WriteBar(game.CurrentLevel, game.MaxLevel, ConsoleColor.Cyan);
+        Console.WriteLine($" {game.CurrentLevel}/{game.MaxLevel}");
+        Console.WriteLine($"  Locatie: {game.CurrentLocation}");
+        WriteLine('=');
+    }
+
+    private static void DrawMessage(GameState game)
+    {
+        if (string.IsNullOrWhiteSpace(game.Message))
+            return;
+
+        Console.WriteLine();
+        foreach (var line in WrapText(game.Message, PanelWidth - 2))
+            Console.WriteLine($"  {line}");
+    }
+
     private static void WriteTitle()
     {
         WriteLine('=');
@@ -68,6 +129,27 @@ public static class ConsoleRenderer
         WriteColored("          een dungeon crawler in tien levels", ConsoleColor.DarkGray);
         WriteLine('=');
         Console.WriteLine();
+    }
+
+    private static void WriteBar(int value, int maximum, ConsoleColor? color = null)
+    {
+        const int barSize = 20;
+        var filled = maximum <= 0 ? 0 : Math.Clamp(value * barSize / maximum, 0, barSize);
+
+        var percentage = value * 100 / Math.Max(1, maximum);
+        var barColor = color ?? percentage switch
+        {
+            > 60 => ConsoleColor.Green,
+            > 30 => ConsoleColor.Yellow,
+            _ => ConsoleColor.Red
+        };
+
+        Console.Write("[");
+        Console.ForegroundColor = barColor;
+        Console.Write(new string('#', filled));
+        Console.ResetColor();
+        Console.Write(new string('-', barSize - filled));
+        Console.Write("]");
     }
 
     private static void WriteLine(char character)

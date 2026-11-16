@@ -1,0 +1,21 @@
+@api = http://localhost:5265
+
+### Werkt de API?
+GET {{api}}/api/status
+
+### Spelinformatie
+GET {{api}}/api/info
+
+### Nieuw spel
+POST {{api}}/api/game
+Content-Type: application/json
+
+{
+  "playerName": "Joeri"
+}
+
+### Alle spellen
+GET {{api}}/api/game
+
+### Eén spel (pas het id aan)
+GET {{api}}/api/game/1

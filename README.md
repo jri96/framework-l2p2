@@ -31,8 +31,24 @@ Voorbeeld van één request:
 - Het requestpad (`/api/status`, `/api/info`) en de DTO-velden zijn gelijk gebleven, dus de console werkt zonder aanpassing.
 - De taakverdeling voor de rest van het spel staat in [docs/TAKEN.md](docs/TAKEN.md).
 
+## Week 4: database en spel starten
+- EF Core met MySQL (Pomelo). Entities `Player` en `Game`, `GameDbContext`.
+- `POST /api/game` slaat een nieuwe speler en game op en geeft **201 Created** met een `GameResponse` terug.
+- `GET /api/game` en `GET /api/game/{id}` halen opgeslagen spellen op, met `Include(game => game.Player)`.
+- De console kan een spel starten en na een herstart hervatten.
+- Relatie en gekozen velden: [docs/ERD.md](docs/ERD.md).
+
 ## Starten
-Twee terminals, allebei vanuit de hoofdmap:
+WAMP aan (MySQL), daarna dubbelklik op `start.bat`. Dat doet eenmalig `dotnet tool restore`, `dotnet restore`, maakt de migration `InitialGame` en de database, en start daarna API en console.
+
+Met de hand:
+
+```powershell
+dotnet ef migrations add InitialGame --project RPG_API --startup-project RPG_API
+dotnet ef database update --project RPG_API --startup-project RPG_API
+```
+
+Daarna twee terminals, allebei vanuit de hoofdmap:
 
 ```powershell
 dotnet run --project .\RPG_API

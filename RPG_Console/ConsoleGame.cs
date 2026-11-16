@@ -1,8 +1,9 @@
 using RPG_Console.Api;
+using RPG_Console.Models;
 
 namespace RPG_Console;
 
-// Week 2: de console haalt gegevens op bij de API via HTTP en JSON.
+// De besturing van de console: menu's tonen, invoer lezen en de API aanroepen.
 public class ConsoleGame
 {
     private readonly GameApiClient _gameApi;
@@ -34,24 +35,33 @@ public class ConsoleGame
         {
             var apiOnline = await _gameApi.IsOnlineAsync();
             ConsoleRenderer.ShowMainMenu(apiOnline);
-            var option = ConsoleInput.ReadOption(3);
+            var option = ConsoleInput.ReadOption(4);
 
             try
             {
                 switch (option)
                 {
                     case 1:
-                        StartNewGame();
+                        await StartNewGameAsync();
                         break;
 
                     case 2:
-                        await ShowGameInfoAsync();
+                        await ContinueGameAsync();
                         break;
 
                     case 3:
+                        await ShowGameInfoAsync();
+                        break;
+
+                    case 4:
                         running = false;
                         break;
                 }
+            }
+            catch (ApiException exception)
+            {
+                ConsoleRenderer.ShowError(exception.Message);
+                ConsoleInput.Pause();
             }
             catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
             {
@@ -61,11 +71,11 @@ public class ConsoleGame
         }
     }
 
-    private static void StartNewGame()
+    private async Task StartNewGameAsync()
     {
         var playerName = ConsoleInput.ReadRequired("  Naam van je held: ");
-        ConsoleRenderer.ShowWelcome(playerName);
-        ConsoleInput.Pause();
+        var game = await _gameApi.StartGameAsync(playerName);
+        await PlayAsync(game);
     }
 
     private async Task ShowGameInfoAsync()
@@ -73,5 +83,45 @@ public class ConsoleGame
         var info = await _gameApi.GetGameInfoAsync();
         ConsoleRenderer.ShowInfo(info);
         ConsoleInput.Pause();
+    }
+
+    private async Task ContinueGameAsync()
+    {
+        var games = await _gameApi.GetGamesAsync();
+
+        if (games.Count == 0)
+        {
+            ConsoleRenderer.ShowWarning("Er zijn nog geen opgeslagen spellen. Start een nieuw spel.");
+            ConsoleInput.Pause();
+            return;
+        }
+
+        ConsoleRenderer.ShowGames(games);
+        var option = ConsoleInput.ReadOption(games.Count + 1);
+
+        if (option == games.Count + 1)
+            return;
+
+        var game = await _gameApi.GetGameAsync(games[option - 1].Id);
+        game.Message = "Je pakt je avontuur weer op.";
+        await PlayAsync(game);
+    }
+
+    // Week 4: het spel wordt opgeslagen en kan worden opgehaald.
+    // Bewegen komt in week 5.
+    private async Task PlayAsync(GameState game)
+    {
+        while (true)
+        {
+            ConsoleRenderer.RenderGame(game);
+            var option = ConsoleInput.ReadOption(2);
+
+            if (option == 2)
+                return;
+
+            var savedGame = await _gameApi.GetGameAsync(game.Id);
+            ConsoleRenderer.ShowStatus(savedGame);
+            ConsoleInput.Pause();
+        }
     }
 }
